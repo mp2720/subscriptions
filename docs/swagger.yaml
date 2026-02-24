@@ -3,7 +3,7 @@ definitions:
   main.CreateSubscriptionReq:
     properties:
       end_date:
-        example: 03-2026
+        example: 04-2026
         type: string
       price:
         type: integer
@@ -25,8 +25,11 @@ definitions:
     type: object
   main.SubscriptionResp:
     properties:
-      end_date:
+      cancelation_date:
         example: 03-2026
+        type: string
+      end_date:
+        example: 04-2026
         type: string
       id:
         type: integer
@@ -46,7 +49,7 @@ definitions:
       revenue:
         type: integer
     type: object
-host: localhost:8080
+host: localhost:8088
 info:
   contact: {}
   version: "1.0"
@@ -120,6 +123,24 @@ paths:
           schema:
             $ref: '#/definitions/main.HTTPErrorResp'
       summary: Get subscription by ID
+  /subscriptions/{id}/cancel:
+    post:
+      parameters:
+      - description: subscription id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ok
+        "404":
+          description: No subscription that is not ended yet with such ID
+          schema:
+            $ref: '#/definitions/main.HTTPErrorResp'
+      summary: Cancel subscription
   /subscriptions/stats:
     get:
       description: Get stats for period (which is a closed interval), user and service

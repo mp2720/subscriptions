@@ -4,7 +4,7 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "localhost:8088",
     "basePath": "/api/v1",
     "paths": {
         "/subscriptions": {
@@ -164,6 +164,34 @@
                     }
                 }
             }
+        },
+        "/subscriptions/{id}/cancel": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Cancel subscription",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "subscription id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "ok"
+                    },
+                    "404": {
+                        "description": "No subscription that is not ended yet with such ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPErrorResp"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -172,7 +200,7 @@
             "properties": {
                 "end_date": {
                     "type": "string",
-                    "example": "03-2026"
+                    "example": "04-2026"
                 },
                 "price": {
                     "type": "integer"
@@ -204,9 +232,13 @@
         "main.SubscriptionResp": {
             "type": "object",
             "properties": {
-                "end_date": {
+                "cancelation_date": {
                     "type": "string",
                     "example": "03-2026"
+                },
+                "end_date": {
+                    "type": "string",
+                    "example": "04-2026"
                 },
                 "id": {
                     "type": "integer"

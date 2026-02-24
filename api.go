@@ -22,6 +22,7 @@ func (api *API) RegisterHandlers(r *gin.RouterGroup) {
 	r.GET("/subscriptions/:id", api.getSubscriptionByID)
 	r.GET("/subscriptions", api.getAllSubscriptions)
 	r.GET("/subscriptions/stats", api.getSubscriptionsStats)
+	r.POST("/subscriptions/:id/cancel", api.cancelSubscriptionByID)
 }
 
 type CreateSubscriptionReq struct {
@@ -29,31 +30,36 @@ type CreateSubscriptionReq struct {
 	Price       uint       `json:"price"`
 	UserUUID    uuid.UUID  `json:"user_uuid" example:"cd2a0341-669e-48ca-9210-839b943e75ae"`
 	StartDate   *MonthYear `json:"start_date" swaggertype:"string" example:"02-2026"`
-	EndDate     *MonthYear `json:"end_date" swaggertype:"string" example:"03-2026"`
+	EndDate     *MonthYear `json:"end_date" swaggertype:"string" example:"04-2026"`
 }
 
 type SubscriptionResp struct {
-	Id          int64      `json:"id"`
-	ServiceName string     `json:"service_name"`
-	Price       uint       `json:"price"`
-	UserUUID    uuid.UUID  `json:"user_uuid" example:"cd2a0341-669e-48ca-9210-839b943e75ae"`
-	StartDate   MonthYear  `json:"start_date" swaggertype:"string" example:"02-2026"`
-	EndDate     *MonthYear `json:"end_date" swaggertype:"string" example:"03-2026"`
+	Id              int64      `json:"id"`
+	ServiceName     string     `json:"service_name"`
+	Price           uint       `json:"price"`
+	UserUUID        uuid.UUID  `json:"user_uuid" example:"cd2a0341-669e-48ca-9210-839b943e75ae"`
+	StartDate       MonthYear  `json:"start_date" swaggertype:"string" example:"02-2026"`
+	EndDate         *MonthYear `json:"end_date" swaggertype:"string" example:"04-2026"`
+	CancelationDate *MonthYear `json:"cancelation_date" swaggertype:"string" example:"03-2026"`
 }
 
 func subscriptionRespFromSQL(sub *sqlgen.Subscription) SubscriptionResp {
 	var endDate *MonthYear
 	if sub.EndDate.Valid {
-		endDateVal := TruncateTimeToMonth(sub.EndDate.Time)
-		endDate = &endDateVal
+		endDate = &MonthYear{sub.EndDate.Time}
+	}
+	var cancelationDate *MonthYear
+	if sub.CancelationDate.Valid {
+		cancelationDate = &MonthYear{sub.CancelationDate.Time}
 	}
 	return SubscriptionResp{
-		Id:          sub.ID.Int64,
-		ServiceName: sub.ServiceName,
-		Price:       uint(sub.Price),
-		UserUUID:    uuid.UUID(sub.UserUuid),
-		StartDate:   TruncateTimeToMonth(sub.StartDate),
-		EndDate:     endDate,
+		Id:              sub.ID.Int64,
+		ServiceName:     sub.ServiceName,
+		Price:           uint(sub.Price),
+		UserUUID:        uuid.UUID(sub.UserUuid),
+		StartDate:       TruncateTimeToMonth(sub.StartDate),
+		EndDate:         endDate,
+		CancelationDate: cancelationDate,
 	}
 }
 
@@ -279,4 +285,46 @@ func (api *API) getSubscriptionsStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, SubscriptionsStatsResp{int(revenue)})
+}
+
+// cancelSubscriptionByID godoc
+//
+//	@Summary	Cancel subscription
+//	@Schemes
+//	@Produce	json
+//	@Param		id	path	int	true	"subscription id"
+//	@Success	204	"ok"
+//	@Failure	404	{object}	HTTPErrorResp	"No subscription that is not ended yet with such ID"
+//	@Router		/subscriptions/{id}/cancel [post]
+func (api *API) cancelSubscriptionByID(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		respError(c,
+			http.StatusBadRequest,
+			fmt.Sprintf("Invalid ID: %s", err),
+		)
+		return
+	}
+
+	currentMonth := TruncateTimeToMonth(time.Now())
+
+	rows, err := api.Queries.CancelSubscriptionByID(
+		c.Request.Context(),
+		sqlgen.CancelSubscriptionByIDParams{
+			ID:              sql.NullInt64{Int64: id, Valid: true},
+			CancelationDate: sql.NullTime{Time: currentMonth.Time, Valid: true},
+		},
+	)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if rows == 0 {
+		respError(c,
+			http.StatusNotFound,
+			"Subscription not found",
+		)
+	}
+
+	c.Status(http.StatusNoContent)
 }

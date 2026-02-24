@@ -172,6 +172,34 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/subscriptions/{id}/cancel": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Cancel subscription",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "subscription id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "ok"
+                    },
+                    "404": {
+                        "description": "No subscription that is not ended yet with such ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPErrorResp"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -180,7 +208,7 @@ const docTemplate = `{
             "properties": {
                 "end_date": {
                     "type": "string",
-                    "example": "03-2026"
+                    "example": "04-2026"
                 },
                 "price": {
                     "type": "integer"
@@ -212,9 +240,13 @@ const docTemplate = `{
         "main.SubscriptionResp": {
             "type": "object",
             "properties": {
-                "end_date": {
+                "cancelation_date": {
                     "type": "string",
                     "example": "03-2026"
+                },
+                "end_date": {
+                    "type": "string",
+                    "example": "04-2026"
                 },
                 "id": {
                     "type": "integer"
@@ -249,7 +281,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "localhost:8088",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "",

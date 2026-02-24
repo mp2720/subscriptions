@@ -22,7 +22,7 @@ SELECT
 FROM (
     SELECT
         price,
-        LEAST($1, end_date) AS overlap_end,
+        LEAST($1, cancelation_date, end_date) AS overlap_end,
         GREATEST($2, start_date) AS overlap_start
     FROM subscriptions
     WHERE
@@ -57,6 +57,27 @@ func (q *Queries) CalculateSubscriptionsRevenue(ctx context.Context, arg Calcula
 	return column_1, err
 }
 
+const cancelSubscriptionByID = `-- name: CancelSubscriptionByID :execrows
+UPDATE subscriptions SET
+    cancelation_date = COALESCE(cancelation_date, $1)
+WHERE
+    id = $2 AND
+    COALESCE(end_date >= $1, TRUE)
+`
+
+type CancelSubscriptionByIDParams struct {
+	CancelationDate sql.NullTime
+	ID              sql.NullInt64
+}
+
+func (q *Queries) CancelSubscriptionByID(ctx context.Context, arg CancelSubscriptionByIDParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, cancelSubscriptionByID, arg.CancelationDate, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const createSubscription = `-- name: CreateSubscription :one
 INSERT INTO subscriptions (
     service_name,
@@ -70,7 +91,7 @@ INSERT INTO subscriptions (
     $3,
     $4,
     $5    
-) RETURNING id, service_name, price, user_uuid, start_date, end_date, canceled_at
+) RETURNING id, service_name, price, user_uuid, start_date, end_date, cancelation_date
 `
 
 type CreateSubscriptionParams struct {
@@ -97,13 +118,13 @@ func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscription
 		&i.UserUuid,
 		&i.StartDate,
 		&i.EndDate,
-		&i.CanceledAt,
+		&i.CancelationDate,
 	)
 	return i, err
 }
 
 const getAllSubscriptions = `-- name: GetAllSubscriptions :many
-SELECT id, service_name, price, user_uuid, start_date, end_date, canceled_at FROM subscriptions
+SELECT id, service_name, price, user_uuid, start_date, end_date, cancelation_date FROM subscriptions
 WHERE
     user_uuid = COALESCE($1, user_uuid) AND
     service_name = COALESCE($2, service_name)
@@ -130,7 +151,7 @@ func (q *Queries) GetAllSubscriptions(ctx context.Context, arg GetAllSubscriptio
 			&i.UserUuid,
 			&i.StartDate,
 			&i.EndDate,
-			&i.CanceledAt,
+			&i.CancelationDate,
 		); err != nil {
 			return nil, err
 		}
@@ -146,7 +167,7 @@ func (q *Queries) GetAllSubscriptions(ctx context.Context, arg GetAllSubscriptio
 }
 
 const getSubscriptionById = `-- name: GetSubscriptionById :one
-SELECT id, service_name, price, user_uuid, start_date, end_date, canceled_at FROM subscriptions
+SELECT id, service_name, price, user_uuid, start_date, end_date, cancelation_date FROM subscriptions
 WHERE id = $1
 `
 
@@ -160,7 +181,7 @@ func (q *Queries) GetSubscriptionById(ctx context.Context, id sql.NullInt64) (Su
 		&i.UserUuid,
 		&i.StartDate,
 		&i.EndDate,
-		&i.CanceledAt,
+		&i.CancelationDate,
 	)
 	return i, err
 }

@@ -10,11 +10,11 @@ import (
 )
 
 type Subscription struct {
-	ID          sql.NullInt64
-	ServiceName string
-	Price       int32
-	UserUuid    []byte
-	StartDate   time.Time
-	EndDate     sql.NullTime
-	CanceledAt  sql.NullTime
+	ID              sql.NullInt64
+	ServiceName     string
+	Price           int32
+	UserUuid        []byte
+	StartDate       time.Time
+	EndDate         sql.NullTime
+	CancelationDate sql.NullTime
 }

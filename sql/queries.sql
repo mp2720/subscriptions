@@ -34,7 +34,7 @@ SELECT
 FROM (
     SELECT
         price,
-        LEAST(@period_end, end_date) AS overlap_end,
+        LEAST(@period_end, cancelation_date, end_date) AS overlap_end,
         GREATEST(@period_start, start_date) AS overlap_start
     FROM subscriptions
     WHERE
@@ -48,3 +48,10 @@ FROM (
         user_uuid = COALESCE(sqlc.narg('user_uuid'), user_uuid) AND
         service_name = COALESCE(sqlc.narg('service_name'), service_name)
 );
+
+-- name: CancelSubscriptionByID :execrows
+UPDATE subscriptions SET
+    cancelation_date = COALESCE(cancelation_date, @cancelation_date)
+WHERE
+    id = @id AND
+    COALESCE(end_date >= @cancelation_date, TRUE);
