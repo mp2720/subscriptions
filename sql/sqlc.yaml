@@ -1,0 +1,14 @@
+version: "2"
+servers:
+- engine: postgresql
+  uri: "postgres://user:password@localhost:5432/postgres?sslmode=disable"
+sql:
+  - engine: "postgresql"
+    queries: "queries.sql"
+    schema: "migrations"
+    database:
+      managed: true
+    gen:
+      go:
+        package: "sqlgen"
+        out: "../sqlgen"

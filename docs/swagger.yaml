@@ -1,0 +1,158 @@
+basePath: /api/v1
+definitions:
+  main.CreateSubscriptionReq:
+    properties:
+      end_date:
+        example: 03-2026
+        type: string
+      price:
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        example: 02-2026
+        type: string
+      user_uuid:
+        example: cd2a0341-669e-48ca-9210-839b943e75ae
+        type: string
+    type: object
+  main.HTTPErrorResp:
+    properties:
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+  main.SubscriptionResp:
+    properties:
+      end_date:
+        example: 03-2026
+        type: string
+      id:
+        type: integer
+      price:
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        example: 02-2026
+        type: string
+      user_uuid:
+        example: cd2a0341-669e-48ca-9210-839b943e75ae
+        type: string
+    type: object
+  main.SubscriptionsStatsResp:
+    properties:
+      revenue:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  version: "1.0"
+paths:
+  /subscriptions:
+    get:
+      parameters:
+      - description: user UUID
+        in: query
+        name: user-uuid
+        type: string
+      - description: service name
+        in: query
+        name: service-name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            items:
+              $ref: '#/definitions/main.SubscriptionResp'
+            type: array
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/main.HTTPErrorResp'
+      summary: Get all subscriptions
+    post:
+      parameters:
+      - description: subscription
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/main.CreateSubscriptionReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: created
+          schema:
+            $ref: '#/definitions/main.SubscriptionResp'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/main.HTTPErrorResp'
+      summary: Create subscription
+  /subscriptions/{id}:
+    get:
+      parameters:
+      - description: subscription id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/main.SubscriptionResp'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/main.HTTPErrorResp'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/main.HTTPErrorResp'
+      summary: Get subscription by ID
+  /subscriptions/stats:
+    get:
+      description: Get stats for period (which is a closed interval), user and service
+        filters
+      parameters:
+      - description: user UUID
+        in: query
+        name: user-uuid
+        type: string
+      - description: service name
+        in: query
+        name: service-name
+        type: string
+      - description: period start
+        in: query
+        name: period-start
+        required: true
+        type: string
+      - description: period end
+        in: query
+        name: period-end
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/main.SubscriptionsStatsResp'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/main.HTTPErrorResp'
+      summary: Get subscriptions stats
+swagger: "2.0"
