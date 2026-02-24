@@ -1,11 +1,8 @@
 package main
 
 import (
-	"net/http"
-
-	"log"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type HTTPErrorResp struct {
@@ -17,7 +14,7 @@ func respError(c *gin.Context, status int, msg string) {
 	c.JSON(status, HTTPErrorResp{status, msg})
 }
 
-func ErrorHandler() gin.HandlerFunc {
+func ErrorHandler(logger *Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
@@ -26,7 +23,7 @@ func ErrorHandler() gin.HandlerFunc {
 		}
 
 		for _, err := range c.Errors {
-			log.Printf("Error: %s", err)
+			logger.Errorf("%s", err)
 		}
 	}
 }

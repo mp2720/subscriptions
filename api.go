@@ -15,6 +15,7 @@ import (
 
 type API struct {
 	Queries *sqlgen.Queries
+	Log     *Logger
 }
 
 func (api *API) RegisterHandlers(r *gin.RouterGroup) {
@@ -119,6 +120,8 @@ func (api *API) createSubscription(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+
+	api.Log.Verbosef("subscription created with id=%d", createdSub.ID.Int64)
 
 	c.JSON(http.StatusCreated, subscriptionRespFromSQL(&createdSub))
 }
@@ -325,6 +328,8 @@ func (api *API) cancelSubscriptionByID(c *gin.Context) {
 			"Subscription not found",
 		)
 	}
+
+	api.Log.Verbosef("subscription with id=%d canceled", id)
 
 	c.Status(http.StatusNoContent)
 }

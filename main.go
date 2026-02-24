@@ -26,7 +26,7 @@ type config struct {
 	DBPort     uint16 `env:"DB_PORT,required"`
 	DBHost     string `env:"DB_HOST,required"`
 	DBSSLMode  string `env:"DB_SSL_MODE,required"`
-	HTTPBind   string `env:"HTTP_BIND,required"`
+	Verbose    bool   `env:"SERVICE_VERBOSE"`
 }
 
 //go:embed sql/migrations/*.sql
@@ -72,17 +72,20 @@ func main() {
 		log.Fatalf("failed to init db queries: %s", err)
 	}
 
+	logger := NewLoger(cfg.Verbose)
+
 	r := gin.Default()
-	r.Use(ErrorHandler())
+	r.Use(ErrorHandler(logger))
 
 	api := API{
 		Queries: queries,
+		Log:     NewLoger(cfg.Verbose),
 	}
 	api.RegisterHandlers(r.Group("/api/v1"))
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	if err := r.Run(cfg.HTTPBind); err != nil {
+	if err := r.Run(":80"); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
 }
