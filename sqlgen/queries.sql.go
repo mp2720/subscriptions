@@ -18,7 +18,7 @@ SELECT
             price * (EXTRACT(MONTH FROM overlap_end) - EXTRACT(MONTH FROM overlap_start) +
             (EXTRACT(YEAR FROM overlap_end) - EXTRACT(YEAR FROM overlap_start)) * 12 + 1)
         ),
-    0) :: INT
+    0) :: BIGINT
 FROM (
     SELECT
         price,
@@ -34,7 +34,8 @@ FROM (
             end_date + INTERVAL '1 month'
         ) AND
         user_uuid = COALESCE($3, user_uuid) AND
-        service_name = COALESCE($4, service_name)
+        service_name = COALESCE($4, service_name) AND
+        COALESCE(cancelation_date >= start_date, TRUE)
 )
 `
 
@@ -45,14 +46,14 @@ type CalculateSubscriptionsRevenueParams struct {
 	ServiceName sql.NullString
 }
 
-func (q *Queries) CalculateSubscriptionsRevenue(ctx context.Context, arg CalculateSubscriptionsRevenueParams) (int32, error) {
+func (q *Queries) CalculateSubscriptionsRevenue(ctx context.Context, arg CalculateSubscriptionsRevenueParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, calculateSubscriptionsRevenue,
 		arg.PeriodEnd,
 		arg.PeriodStart,
 		arg.UserUuid,
 		arg.ServiceName,
 	)
-	var column_1 int32
+	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
 }

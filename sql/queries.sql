@@ -30,7 +30,7 @@ SELECT
             price * (EXTRACT(MONTH FROM overlap_end) - EXTRACT(MONTH FROM overlap_start) +
             (EXTRACT(YEAR FROM overlap_end) - EXTRACT(YEAR FROM overlap_start)) * 12 + 1)
         ),
-    0) :: INT
+    0) :: BIGINT
 FROM (
     SELECT
         price,
@@ -46,7 +46,8 @@ FROM (
             end_date + INTERVAL '1 month'
         ) AND
         user_uuid = COALESCE(sqlc.narg('user_uuid'), user_uuid) AND
-        service_name = COALESCE(sqlc.narg('service_name'), service_name)
+        service_name = COALESCE(sqlc.narg('service_name'), service_name) AND
+        COALESCE(cancelation_date >= start_date, TRUE)
 );
 
 -- name: CancelSubscriptionByID :execrows
