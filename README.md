@@ -55,6 +55,7 @@ eval export $(cat .env)
 Запуск
 
 ```bash
+docker-compose up db -d
 go run .
 ```
 
