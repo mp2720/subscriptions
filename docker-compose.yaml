@@ -1,13 +1,26 @@
 services:
   db:
     image: postgres:18
-    restart: always
-    ports:
-      - '${DB_PORT}:5432'
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB}
       PGDATA: /var/lib/postgresql
     volumes:
-      - ./postgres-data:/var/lib/postgresql
+      - ${DB_VOLUME}:/var/lib/postgresql
+    ports:
+      - '${DB_PORT}:5432'
+  subscriptions:
+    image: subscriptions:latest
+    restart: always
+    ports:
+      - '${SERVICE_PORT}:8080'
+    environment:
+      DB: ${DB}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: 5432
+      DB_HOST: db
+      DB_SSL_MODE: disable
+      SERVICE_VERBOSE: ${SERVICE_VERBOSE}
+      SERVICE_PORT: 8080
