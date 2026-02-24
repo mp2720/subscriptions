@@ -27,6 +27,7 @@ type config struct {
 	DBHost     string `env:"DB_HOST,required"`
 	DBSSLMode  string `env:"DB_SSL_MODE,required"`
 	Verbose    bool   `env:"SERVICE_VERBOSE"`
+	Port       uint16 `env:"SERVICE_PORT,required"`
 }
 
 //go:embed sql/migrations/*.sql
@@ -85,7 +86,7 @@ func main() {
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	if err := r.Run(":80"); err != nil {
+	if err := r.Run(fmt.Sprintf(":%d", cfg.Port)); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
 }
